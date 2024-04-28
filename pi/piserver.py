@@ -10,38 +10,35 @@ def client_thread(conn, player):
     global current_turn
     welcome_message = "Welcome to Tic Tac Toe! You are Player " + str(player + 1)
     conn.send(str.encode(welcome_message))
-    send_game_board(conn)
+    send_game_board_to_all()  # Send initial game board to newly connected player
 
     while True:
         try:
             data = conn.recv(2048).decode('utf-8')
             if not data:
-                break  # Player disconnected
+                print("Player {} disconnected".format(player + 1))
+                break
             if player == current_turn:
                 x, y = map(int, data.split())
                 if game_board[x][y] == ' ':
                     game_board[x][y] = 'X' if player == 0 else 'O'
-                    current_turn = 1 - current_turn
-                    send_game_board_to_all()
+                    current_turn = 1 - current_turn  # Switch turns
+                    send_game_board_to_all()  # Send updated board to all players after a valid move
                 else:
-                    conn.send(str.encode("Invalid move"))
+                    conn.send(str.encode("Invalid move. Try again."))
             else:
-                conn.send(str.encode("Not your turn"))
+                conn.send(str.encode("It's not your turn. Please wait."))
         except Exception as e:
             print("Error handling data from player {}: {}".format(player + 1, e))
             break
 
     conn.close()
 
-def send_game_board(conn):
-    board_visual = "\n".join([" | ".join(row) for row in game_board])
-    conn.sendall(str.encode(board_visual))
-
 def send_game_board_to_all():
     board_visual = "\n".join([" | ".join(row) for row in game_board])
     for p in players:
         if p:
-            p.sendall(str.encode(board_visual))
+            p.sendall(str.encode(board_visual + "\nIt's Player {}'s turn.".format(current_turn + 1)))
 
 server_ip = '10.0.0.224'
 port = 65434
