@@ -10,20 +10,19 @@ def client_thread(conn, player):
     global current_turn
     welcome_message = "Welcome to Tic Tac Toe! You are Player " + str(player + 1)
     conn.send(str.encode(welcome_message))
-    send_game_board(conn)  # Send initial game board right after welcome message
+    send_game_board(conn)
 
     while True:
         try:
             data = conn.recv(2048).decode('utf-8')
             if not data:
-                print("Player {} disconnected".format(player + 1))
-                break
+                break  # Player disconnected
             if player == current_turn:
                 x, y = map(int, data.split())
                 if game_board[x][y] == ' ':
                     game_board[x][y] = 'X' if player == 0 else 'O'
-                    current_turn = 1 - current_turn  # Switch turns
-                    send_game_board_to_all()  # Send updated board to all players
+                    current_turn = 1 - current_turn
+                    send_game_board_to_all()
                 else:
                     conn.send(str.encode("Invalid move"))
             else:
@@ -31,7 +30,7 @@ def client_thread(conn, player):
         except Exception as e:
             print("Error handling data from player {}: {}".format(player + 1, e))
             break
-    
+
     conn.close()
 
 def send_game_board(conn):
@@ -45,7 +44,7 @@ def send_game_board_to_all():
             p.sendall(str.encode(board_visual))
 
 server_ip = '10.0.0.224'
-port = 65433
+port = 65434
 server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 
 try:
@@ -57,7 +56,6 @@ try:
         conn, addr = server_socket.accept()
         print("Connected to:", addr)
 
-        # Assign player 1 or 2
         player_index = 0 if players[0] is None else 1
         players[player_index] = conn
         start_new_thread(client_thread, (conn, player_index))
@@ -68,3 +66,4 @@ except Exception as e:
     print("Error:", e)
 finally:
     server_socket.close()
+    print("Server has been closed.")
