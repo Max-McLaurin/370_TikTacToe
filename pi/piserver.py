@@ -8,8 +8,10 @@ current_turn = 0
 
 def client_thread(conn, player):
     global current_turn
-    conn.send(str.encode("Welcome to Tic Tac Toe! You are Player " + str(player + 1)))
-    
+    welcome_message = "Welcome to Tic Tac Toe! You are Player " + str(player + 1)
+    conn.send(str.encode(welcome_message))
+    send_game_board(conn)  # Send initial game board right after welcome message
+
     while True:
         try:
             data = conn.recv(2048).decode('utf-8')
@@ -21,7 +23,7 @@ def client_thread(conn, player):
                 if game_board[x][y] == ' ':
                     game_board[x][y] = 'X' if player == 0 else 'O'
                     current_turn = 1 - current_turn  # Switch turns
-                    send_game_board()
+                    send_game_board_to_all()  # Send updated board to all players
                 else:
                     conn.send(str.encode("Invalid move"))
             else:
@@ -32,7 +34,11 @@ def client_thread(conn, player):
     
     conn.close()
 
-def send_game_board():
+def send_game_board(conn):
+    board_visual = "\n".join([" | ".join(row) for row in game_board])
+    conn.sendall(str.encode(board_visual))
+
+def send_game_board_to_all():
     board_visual = "\n".join([" | ".join(row) for row in game_board])
     for p in players:
         if p:
