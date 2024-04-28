@@ -10,7 +10,7 @@ def client_thread(conn, player):
     global current_turn
     welcome_message = "Welcome to Tic Tac Toe! You are Player " + str(player + 1)
     conn.send(str.encode(welcome_message))
-    send_game_board_to_all()  # Send initial game board to newly connected player
+    send_game_board_to_all()  # Send initial game board to both players immediately
 
     while True:
         try:
@@ -40,6 +40,18 @@ def send_game_board_to_all():
         if p:
             p.sendall(str.encode(board_visual + "\nIt's Player {}'s turn.".format(current_turn + 1)))
 
+def wait_for_players(server_socket):
+    print("Waiting for players to connect...")
+    player_count = 0
+    while player_count < 2:
+        conn, addr = server_socket.accept()
+        print("Connected to:", addr)
+        players[player_count] = conn
+        player_count += 1
+
+    for i in range(2):
+        start_new_thread(client_thread, (players[i], i))
+
 server_ip = '10.0.0.224'
 port = 65434
 server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -47,15 +59,9 @@ server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 try:
     server_socket.bind((server_ip, port))
     server_socket.listen(2)
-    print("Server started on {}:{}\nWaiting for connections...".format(server_ip, port))
+    print("Server started on {}:{}\n".format(server_ip, port))
 
-    while True:
-        conn, addr = server_socket.accept()
-        print("Connected to:", addr)
-
-        player_index = 0 if players[0] is None else 1
-        players[player_index] = conn
-        start_new_thread(client_thread, (conn, player_index))
+    wait_for_players(server_socket)  # Wait for both players to connect and start their threads
 
 except socket.error as e:
     print("Socket error:", e)

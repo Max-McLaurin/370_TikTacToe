@@ -2,7 +2,7 @@ import socket
 
 def main():
     host = '10.0.0.224'  # Server IP
-    port = 65434         # Server port
+    port = 65435         # Server port
 
     client_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     try:
