@@ -2,7 +2,7 @@ import socket
 
 def main():
     host = '10.0.0.224'  # Server IP
-    port = 65435         # Server port
+    port = 65434         # Server port
 
     client_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     try:
@@ -13,18 +13,20 @@ def main():
             # Receive game board or game updates
             server_response = client_socket.recv(4096).decode('utf-8')
             if not server_response:
-                break  # Server has closed the connection
+                print("Server has closed the connection.")
+                break  # Server has closed the connection or connection was lost
             
-            print(server_response)  # Print the game board and whose turn it is
+            print(server_response)  # Display the game board and any messages
 
-            if "It's Player" in server_response and f"It's Player {server_response[-1]}" not in server_response:
-                continue  # If it's not this client's turn, skip sending a move.
-
-            # Prompt for a move
-            move = input("Enter your move (row col): ")
-            if move.lower() == 'exit':
+            # Determine if the received message contains a prompt for the player's move
+            if "It's Player" in server_response and "turn" in server_response:
+                move = input("Enter your move (row col): ")
+                if move.lower() == 'exit':
+                    break
+                client_socket.send(move.encode('utf-8'))
+            elif "wins" in server_response or "draw" in server_response:
+                # If the game is over, break the loop
                 break
-            client_socket.send(move.encode('utf-8'))
 
     except Exception as e:
         print("Unable to connect to the server or an error occurred:", e)
